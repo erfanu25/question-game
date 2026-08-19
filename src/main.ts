@@ -29,6 +29,8 @@ const QUESTIONS: QuestionDef[] = [
 
 const CLOSING_MESSAGE = "You make every ordinary day feel extraordinary. I love you, today, tomorrow, and always.";
 const RESTART_LABEL = "Play again";
+const HUSBAND_NAME = "Erfan";
+const WIFE_NAME = "Samina";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 let currentIndex = 0;
 let answered = false;
@@ -42,7 +44,7 @@ function renderQuestion(): void {
       <div class="ambient ambient-one" aria-hidden="true"></div>
       <div class="ambient ambient-two" aria-hidden="true"></div>
       <div class="hearts" aria-hidden="true"><span>♥</span><span>♡</span><span>♥</span><span>♡</span></div>
-      <header class="topbar"><span class="brand-mark">for us, always</span><span class="question-count">${String(currentIndex + 1).padStart(2, "0")} <i>/</i> 10</span></header>
+      <header class="topbar"><span class="brand-mark">${HUSBAND_NAME} <b>♡</b> ${WIFE_NAME}</span><span class="question-count">${String(currentIndex + 1).padStart(2, "0")} <i>/</i> 10</span></header>
       <section class="game-area" aria-labelledby="question-title">
         <div class="progress" aria-label="Question progress"><span style="width: ${((currentIndex + 1) / QUESTIONS.length) * 100}%"></span></div>
         <div class="motif motif-${question.motif}" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -55,7 +57,7 @@ function renderQuestion(): void {
         </div>
         <p class="reaction" id="reaction" aria-live="polite"></p>
       </section>
-      <p class="quiet-note">a tiny love letter, one question at a time</p>
+      <p class="quiet-note">a tiny love letter from ${HUSBAND_NAME} to ${WIFE_NAME}</p>
       <div class="live-region" aria-live="polite" aria-atomic="true"></div>
     </main>`;
 
@@ -71,14 +73,42 @@ function choose(isYes: boolean): void {
   const question = QUESTIONS[currentIndex];
   if (question.isFinal && !isYes) return;
   answered = true;
+  playChime(question.isFinal ? "celebration" : "answer");
   createHeartRain();
   app.querySelectorAll<HTMLButtonElement>(".answer").forEach((button) => { button.disabled = true; button.classList.add("selected"); });
   app.querySelector<HTMLElement>("#reaction")!.textContent = question.reaction;
   app.querySelector<HTMLElement>(".live-region")!.textContent = question.reaction;
   reactionTimer = window.setTimeout(() => {
-    if (question.isFinal) renderCelebration();
+    if (question.isFinal) renderSurprise();
     else { currentIndex += 1; renderQuestion(); }
   }, 1500);
+}
+
+function playChime(kind: "answer" | "celebration"): void {
+  const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return;
+  const audioContext = new AudioContextClass();
+  const now = audioContext.currentTime;
+  const notes = kind === "celebration" ? [523.25, 659.25, 783.99] : [659.25];
+  notes.forEach((frequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = kind === "celebration" ? "sine" : "triangle";
+    oscillator.frequency.value = frequency;
+    const start = now + index * 0.13;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(kind === "celebration" ? 0.12 : 0.06, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + (kind === "celebration" ? 0.72 : 0.3));
+    oscillator.connect(gain).connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + (kind === "celebration" ? 0.75 : 0.34));
+  });
+  window.setTimeout(() => audioContext.close(), kind === "celebration" ? 1200 : 700);
+}
+
+function renderSurprise(): void {
+  app.innerHTML = `<main class="surprise-screen"><div class="surprise-orbit" aria-hidden="true"><span>♡</span><span>♥</span><span>✦</span></div><div class="surprise-inner"><p class="eyebrow">Just for you, Samina</p><h1>One last surprise<span>...</span></h1><p class="surprise-copy">A little more love is on its way.</p><div class="surprise-dots" aria-hidden="true"><i></i><i></i><i></i></div></div><div class="live-region" aria-live="polite">One last surprise. A little more love is on its way.</div></main>`;
+  reactionTimer = window.setTimeout(renderCelebration, 1800);
 }
 
 function createHeartRain(): void {
@@ -128,7 +158,7 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
 }
 
 function renderCelebration(): void {
-  app.innerHTML = `<main class="celebration"><div class="confetti" aria-hidden="true"></div><div class="celebration-inner"><p class="eyebrow">The easiest answer</p><div class="big-heart" aria-hidden="true">♥</div><h1>Forever it is.</h1><p class="closing-message">${CLOSING_MESSAGE}</p><button class="restart" type="button">${RESTART_LABEL}<span aria-hidden="true">↻</span></button><p class="quiet-note">made with an unreasonable amount of love</p></div><div class="live-region" aria-live="polite">You chose forever. ${CLOSING_MESSAGE}</div></main>`;
+  app.innerHTML = `<main class="celebration"><div class="confetti" aria-hidden="true"></div><div class="celebration-inner"><p class="eyebrow">The easiest answer</p><div class="couple-seal" aria-hidden="true"><span>${HUSBAND_NAME[0]}</span><b>♡</b><span>${WIFE_NAME[0]}</span></div><h1>Forever it is, Samina.</h1><p class="closing-message">${CLOSING_MESSAGE}</p><p class="signature">With all my love,<br><strong>${HUSBAND_NAME}</strong></p><button class="restart" type="button">${RESTART_LABEL}<span aria-hidden="true">↻</span></button><p class="quiet-note">our little forever, ${HUSBAND_NAME} &amp; ${WIFE_NAME}</p></div><div class="live-region" aria-live="polite">You chose forever. ${CLOSING_MESSAGE} Love, ${HUSBAND_NAME}.</div></main>`;
   app.querySelector<HTMLButtonElement>(".restart")!.addEventListener("click", () => { window.clearTimeout(reactionTimer); currentIndex = 0; renderQuestion(); });
 }
 
