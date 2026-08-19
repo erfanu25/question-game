@@ -132,29 +132,43 @@ function createHeartRain(): void {
 
 function setupEvasiveButton(button: HTMLButtonElement): void {
   const area = app.querySelector<HTMLElement>("#answer-area")!;
-  const move = (event?: Event): void => {
+  let dodgeCount = 0;
+  const move = (event?: Event, shouldShrink = true): void => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || answered) return;
     event?.preventDefault();
+    if (shouldShrink) dodgeCount += 1;
     const areaRect = area.getBoundingClientRect();
     const yesRect = app.querySelector<HTMLButtonElement>(".answer-yes")!.getBoundingClientRect();
     const maxX = Math.max(0, areaRect.width - button.offsetWidth);
     const maxY = Math.max(0, areaRect.height - button.offsetHeight);
-    let x = Math.random() * maxX;
-    let y = Math.random() * maxY;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const candidate = { left: areaRect.left + x, right: areaRect.left + x + button.offsetWidth, top: areaRect.top + y, bottom: areaRect.top + y + button.offsetHeight };
-      if (candidate.right < yesRect.left - 18 || candidate.left > yesRect.right + 18 || candidate.bottom < yesRect.top - 18 || candidate.top > yesRect.bottom + 18) break;
-      x = Math.random() * maxX;
-      y = Math.random() * maxY;
+    const gap = 24;
+    const yesLeft = yesRect.left - areaRect.left;
+    const yesTop = yesRect.top - areaRect.top;
+    const isSafe = (candidateX: number, candidateY: number): boolean => {
+      const candidate = { left: candidateX, right: candidateX + button.offsetWidth, top: candidateY, bottom: candidateY + button.offsetHeight };
+      return candidate.right < yesLeft - gap || candidate.left > yesLeft + yesRect.width + gap || candidate.bottom < yesTop - gap || candidate.top > yesTop + yesRect.height + gap;
+    };
+    let x = 0;
+    let y = Math.min(maxY, yesTop + yesRect.height + gap);
+    if (!isSafe(x, y)) y = Math.max(0, yesTop - button.offsetHeight - gap);
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const candidateX = Math.random() * maxX;
+      const candidateY = Math.random() * maxY;
+      if (isSafe(candidateX, candidateY)) {
+        x = candidateX;
+        y = candidateY;
+        break;
+      }
     }
     button.style.left = `${x}px`;
     button.style.top = `${y}px`;
-    button.style.transform = "none";
+    const scale = Math.max(0.62, 1 - dodgeCount * 0.06);
+    button.style.transform = `scale(${scale})`;
   };
   button.addEventListener("pointerenter", move);
   button.addEventListener("focus", move);
   button.addEventListener("touchstart", move, { passive: false });
-  move();
+  move(undefined, false);
 }
 
 function renderCelebration(): void {
