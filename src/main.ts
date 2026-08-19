@@ -133,6 +133,9 @@ function createHeartRain(): void {
 function setupEvasiveButton(button: HTMLButtonElement): void {
   const area = app.querySelector<HTMLElement>("#answer-area")!;
   let dodgeCount = 0;
+  let lastX = -1000;
+  let lastY = -1000;
+  let burstActive = false;
   const move = (event?: Event, shouldShrink = true): void => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || answered) return;
     event?.preventDefault();
@@ -144,9 +147,15 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
     const gap = 24;
     const yesLeft = yesRect.left - areaRect.left;
     const yesTop = yesRect.top - areaRect.top;
+    const pointerEvent = event instanceof PointerEvent ? event : undefined;
+    const pointerX = pointerEvent ? pointerEvent.clientX - areaRect.left : undefined;
+    const pointerY = pointerEvent ? pointerEvent.clientY - areaRect.top : undefined;
     const isSafe = (candidateX: number, candidateY: number): boolean => {
       const candidate = { left: candidateX, right: candidateX + button.offsetWidth, top: candidateY, bottom: candidateY + button.offsetHeight };
-      return candidate.right < yesLeft - gap || candidate.left > yesLeft + yesRect.width + gap || candidate.bottom < yesTop - gap || candidate.top > yesTop + yesRect.height + gap;
+      const awayFromYes = candidate.right < yesLeft - gap || candidate.left > yesLeft + yesRect.width + gap || candidate.bottom < yesTop - gap || candidate.top > yesTop + yesRect.height + gap;
+      const movedEnough = Math.abs(candidateX - lastX) > 42 || Math.abs(candidateY - lastY) > 42;
+      const awayFromPointer = pointerX === undefined || pointerY === undefined || Math.abs(candidateX - pointerX) > 70 || Math.abs(candidateY - pointerY) > 70;
+      return awayFromYes && movedEnough && awayFromPointer;
     };
     let x = 0;
     let y = Math.min(maxY, yesTop + yesRect.height + gap);
@@ -164,10 +173,21 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
     button.style.top = `${y}px`;
     const scale = Math.max(0.62, 1 - dodgeCount * 0.06);
     button.style.transform = `scale(${scale})`;
+    lastX = x;
+    lastY = y;
   };
-  button.addEventListener("pointerenter", move);
-  button.addEventListener("focus", move);
-  button.addEventListener("touchstart", move, { passive: false });
+  const dodgeBurst = (event?: Event): void => {
+    if (burstActive || answered) return;
+    burstActive = true;
+    move(event);
+    window.setTimeout(() => move(), 120);
+    window.setTimeout(() => move(), 240);
+    window.setTimeout(() => { burstActive = false; }, 380);
+  };
+  button.addEventListener("pointerenter", dodgeBurst);
+  button.addEventListener("pointerdown", dodgeBurst);
+  button.addEventListener("focus", dodgeBurst);
+  button.addEventListener("touchstart", dodgeBurst, { passive: false });
   move(undefined, false);
 }
 
