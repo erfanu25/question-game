@@ -131,7 +131,6 @@ function createHeartRain(): void {
 }
 
 function setupEvasiveButton(button: HTMLButtonElement): void {
-  const area = app.querySelector<HTMLElement>("#answer-area")!;
   let dodgeCount = 0;
   let lastX = -1000;
   let lastY = -1000;
@@ -142,6 +141,18 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
     if (shouldShrink) dodgeCount += 1;
     const areaRect = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
     const yesRect = app.querySelector<HTMLButtonElement>(".answer-yes")!.getBoundingClientRect();
+    if (!shouldShrink) {
+      const isMobile = window.matchMedia("(max-width: 560px)").matches;
+      const besideX = yesRect.right + 14;
+      const initialX = !isMobile && besideX + button.offsetWidth <= window.innerWidth - 12 ? besideX : yesRect.left;
+      const initialY = !isMobile && initialX === besideX ? yesRect.top : yesRect.bottom + 14;
+      button.style.left = `${initialX}px`;
+      button.style.top = `${initialY}px`;
+      button.style.transform = "scale(1)";
+      lastX = initialX;
+      lastY = initialY;
+      return;
+    }
     const maxX = Math.max(0, areaRect.width - button.offsetWidth);
     const maxY = Math.max(0, areaRect.height - button.offsetHeight);
     const gap = 24;
