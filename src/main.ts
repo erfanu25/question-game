@@ -140,7 +140,7 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || answered) return;
     event?.preventDefault();
     if (shouldShrink) dodgeCount += 1;
-    const areaRect = area.getBoundingClientRect();
+    const areaRect = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
     const yesRect = app.querySelector<HTMLButtonElement>(".answer-yes")!.getBoundingClientRect();
     const maxX = Math.max(0, areaRect.width - button.offsetWidth);
     const maxY = Math.max(0, areaRect.height - button.offsetHeight);

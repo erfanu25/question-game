@@ -21,7 +21,7 @@ button { font: inherit; }
 
 @media (min-width: 561px) { .answer-no.evasive { left: calc(50% + 120px); } }
 .answer.selected { animation: answer-pop .45s ease both; }
-.answer-no.evasive { transition: left .2s ease, top .2s ease, transform .2s ease, background .2s ease, color .2s ease; transform-origin: center; }
+.answer-no.evasive { position: fixed; z-index: 12; color: var(--rose-dark); background: var(--paper); border-color: var(--rose); box-shadow: 0 8px 22px rgba(92, 42, 51, .16); transition: left .2s ease, top .2s ease, transform .2s ease, background .2s ease, color .2s ease; transform-origin: center; }
 @keyframes answer-pop { 0% { opacity: .55; transform: scale(.92); } 65% { opacity: 1; transform: scale(1.08) rotate(-2deg); } 100% { transform: scale(1); } }
 .heart-rain { position: fixed; inset: 0; z-index: 20; overflow: hidden; pointer-events: none; }
 .heart-rain span { position: absolute; top: -12vh; left: var(--heart-left); color: var(--rose); font-size: var(--heart-size); line-height: 1; opacity: 0; animation: heart-fall var(--heart-duration) ease-in var(--heart-delay) forwards; }
