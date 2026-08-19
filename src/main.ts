@@ -1,0 +1,114 @@
+import "./style.css";
+
+type Motif = "hearts" | "sparkles" | "frame" | "envelope";
+
+type QuestionDef = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  sub: string;
+  yesLabel: string;
+  noLabel: string;
+  reaction: string;
+  motif: Motif;
+  isFinal?: boolean;
+};
+
+const QUESTIONS: QuestionDef[] = [
+  { id: "first-smile", eyebrow: "A little warm-up", title: "Do you know that your smile can still fix my entire day?", sub: "I have been trying to earn that smile ever since.", yesLabel: "Of course I do", noLabel: "Remind me", reaction: "That smile is still my favorite view.", motif: "hearts" },
+  { id: "laughter", eyebrow: "An important survey", title: "Do I still make you laugh, even when my jokes need a little help?", sub: "I promise to keep improving the material. Eventually.", yesLabel: "You make me laugh", noLabel: "The effort is cute", reaction: "Excellent. My comedy career lives another day.", motif: "sparkles" },
+  { id: "safe-place", eyebrow: "The honest bit", title: "Do you know that being with you is still my favorite place to be?", sub: "No reservation needed. Just you and me.", yesLabel: "I know", noLabel: "Tell me more", reaction: "Good. I mean every word of it.", motif: "frame" },
+  { id: "pasta", eyebrow: "Kitchen diplomacy", title: "Would you still love me if I burned the pasta again?", sub: "This is a hypothetical. Mostly.", yesLabel: "Always", noLabel: "Depends on the pasta", reaction: "I knew you would forgive my very ambitious cooking.", motif: "envelope" },
+  { id: "dance", eyebrow: "A serious request", title: "Will you keep dancing with me, even when there is no music?", sub: "The kitchen counts as a dance floor, by the way.", yesLabel: "Always dance with you", noLabel: "Only if you lead", reaction: "Deal. I will try not to step on your toes.", motif: "hearts" },
+  { id: "team", eyebrow: "Us against the world", title: "Are we still the best team, even on the busy and messy days?", sub: "Especially on those days, I think.", yesLabel: "The very best team", noLabel: "Obviously", reaction: "My favorite teammate, always.", motif: "sparkles" },
+  { id: "little-things", eyebrow: "The small things", title: "Do you know how much I love the ordinary moments with you?", sub: "Coffee, errands, quiet evenings - all of it.", yesLabel: "I do now", noLabel: "Say it again", reaction: "Every ordinary day with you feels special to me.", motif: "frame" },
+  { id: "annoying", eyebrow: "A brave question", title: "Am I still allowed to be a little annoying sometimes?", sub: "There is no wrong answer here. There might be one risky one.", yesLabel: "Only a little", noLabel: "You are perfect", reaction: "I will treasure this very generous permission.", motif: "envelope" },
+  { id: "grateful", eyebrow: "From my heart", title: "Do you know how grateful I am that you are my wife?", sub: "You make our life warmer, brighter, and much more fun.", yesLabel: "I know, my love", noLabel: "I love you too", reaction: "I love you more than these little questions can say.", motif: "hearts" },
+  { id: "forever", eyebrow: "One last thing", title: "Can I keep loving you forever?", sub: "Choose wisely. One button is feeling a little shy.", yesLabel: "Forever and always", noLabel: "Not a chance", reaction: "I knew forever sounded better with you in it.", motif: "sparkles", isFinal: true },
+];
+
+const CLOSING_MESSAGE = "You make every ordinary day feel extraordinary. I love you, today, tomorrow, and always.";
+const RESTART_LABEL = "Play again";
+const app = document.querySelector<HTMLDivElement>("#app")!;
+let currentIndex = 0;
+let answered = false;
+let reactionTimer: number | undefined;
+
+function renderQuestion(): void {
+  const question = QUESTIONS[currentIndex];
+  answered = false;
+  app.innerHTML = `
+    <main class="page-shell">
+      <div class="ambient ambient-one" aria-hidden="true"></div>
+      <div class="ambient ambient-two" aria-hidden="true"></div>
+      <div class="hearts" aria-hidden="true"><span>♥</span><span>♡</span><span>♥</span><span>♡</span></div>
+      <header class="topbar"><span class="brand-mark">for us, always</span><span class="question-count">${String(currentIndex + 1).padStart(2, "0")} <i>/</i> 10</span></header>
+      <section class="game-area" aria-labelledby="question-title">
+        <div class="progress" aria-label="Question progress"><span style="width: ${((currentIndex + 1) / QUESTIONS.length) * 100}%"></span></div>
+        <div class="motif motif-${question.motif}" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p class="eyebrow">${question.eyebrow}</p>
+        <h1 id="question-title">${question.title}</h1>
+        <p class="subcopy">${question.sub}</p>
+        <div class="answer-area" id="answer-area">
+          <button class="answer answer-yes" type="button">${question.yesLabel}<span aria-hidden="true">↗</span></button>
+          <button class="answer answer-no${question.isFinal ? " evasive" : ""}" type="button">${question.noLabel}</button>
+        </div>
+        <p class="reaction" id="reaction" aria-live="polite"></p>
+      </section>
+      <p class="quiet-note">a tiny love letter, one question at a time</p>
+      <div class="live-region" aria-live="polite" aria-atomic="true"></div>
+    </main>`;
+
+  const yesButton = app.querySelector<HTMLButtonElement>(".answer-yes")!;
+  const noButton = app.querySelector<HTMLButtonElement>(".answer-no")!;
+  yesButton.addEventListener("click", () => choose(true));
+  noButton.addEventListener("click", () => choose(false));
+  if (question.isFinal) setupEvasiveButton(noButton);
+}
+
+function choose(isYes: boolean): void {
+  if (answered) return;
+  const question = QUESTIONS[currentIndex];
+  if (question.isFinal && !isYes) return;
+  answered = true;
+  app.querySelectorAll<HTMLButtonElement>(".answer").forEach((button) => { button.disabled = true; });
+  app.querySelector<HTMLElement>("#reaction")!.textContent = question.reaction;
+  app.querySelector<HTMLElement>(".live-region")!.textContent = question.reaction;
+  reactionTimer = window.setTimeout(() => {
+    if (question.isFinal) renderCelebration();
+    else { currentIndex += 1; renderQuestion(); }
+  }, 3000);
+}
+
+function setupEvasiveButton(button: HTMLButtonElement): void {
+  const area = app.querySelector<HTMLElement>("#answer-area")!;
+  const move = (event?: Event): void => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || answered) return;
+    event?.preventDefault();
+    const areaRect = area.getBoundingClientRect();
+    const yesRect = app.querySelector<HTMLButtonElement>(".answer-yes")!.getBoundingClientRect();
+    const maxX = Math.max(0, areaRect.width - button.offsetWidth);
+    const maxY = Math.max(0, areaRect.height - button.offsetHeight);
+    let x = Math.random() * maxX;
+    let y = Math.random() * maxY;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const candidate = { left: areaRect.left + x, right: areaRect.left + x + button.offsetWidth, top: areaRect.top + y, bottom: areaRect.top + y + button.offsetHeight };
+      if (candidate.right < yesRect.left - 18 || candidate.left > yesRect.right + 18 || candidate.bottom < yesRect.top - 18 || candidate.top > yesRect.bottom + 18) break;
+      x = Math.random() * maxX;
+      y = Math.random() * maxY;
+    }
+    button.style.left = `${x}px`;
+    button.style.top = `${y}px`;
+    button.style.transform = "none";
+  };
+  button.addEventListener("pointerenter", move);
+  button.addEventListener("focus", move);
+  button.addEventListener("touchstart", move, { passive: false });
+}
+
+function renderCelebration(): void {
+  app.innerHTML = `<main class="celebration"><div class="confetti" aria-hidden="true"></div><div class="celebration-inner"><p class="eyebrow">The easiest answer</p><div class="big-heart" aria-hidden="true">♥</div><h1>Forever it is.</h1><p class="closing-message">${CLOSING_MESSAGE}</p><button class="restart" type="button">${RESTART_LABEL}<span aria-hidden="true">↻</span></button><p class="quiet-note">made with an unreasonable amount of love</p></div><div class="live-region" aria-live="polite">You chose forever. ${CLOSING_MESSAGE}</div></main>`;
+  app.querySelector<HTMLButtonElement>(".restart")!.addEventListener("click", () => { window.clearTimeout(reactionTimer); currentIndex = 0; renderQuestion(); });
+}
+
+renderQuestion();
