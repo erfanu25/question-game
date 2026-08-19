@@ -22,7 +22,7 @@ const QUESTIONS: QuestionDef[] = [
   { id: "dance", eyebrow: "A serious request", title: "Will you keep dancing with me, even when there is no music?", sub: "The kitchen counts as a dance floor, by the way.", yesLabel: "Always dance with you", noLabel: "Only if you lead", reaction: "Deal. I will try not to step on your toes.", motif: "hearts" },
   { id: "team", eyebrow: "Us against the world", title: "Are we still the best team, even on the busy and messy days?", sub: "Especially on those days, I think.", yesLabel: "The very best team", noLabel: "Obviously", reaction: "My favorite teammate, always.", motif: "sparkles" },
   { id: "little-things", eyebrow: "The small things", title: "Do you know how much I love the ordinary moments with you?", sub: "Coffee, errands, quiet evenings - all of it.", yesLabel: "I do now", noLabel: "Say it again", reaction: "Every ordinary day with you feels special to me.", motif: "frame" },
-  { id: "annoying", eyebrow: "A brave question", title: "Am I still allowed to be a little annoying sometimes?", sub: "There is no wrong answer here. There might be one risky one.", yesLabel: "Only a little", noLabel: "You are perfect", reaction: "I will treasure this very generous permission.", motif: "envelope" },
+  { id: "apology", eyebrow: "A tiny apology", title: "Will you forgive me for the times I have been a little difficult?", sub: "I am still learning, but I will always choose us and try again.", yesLabel: "Always forgive you", noLabel: "Tell me what happened", reaction: "Thank you, my love. I am sorry, and I will do better.", motif: "envelope" },
   { id: "grateful", eyebrow: "From my heart", title: "Do you know how grateful I am that you are my wife?", sub: "You make our life warmer, brighter, and much more fun.", yesLabel: "I know, my love", noLabel: "I love you too", reaction: "I love you more than these little questions can say.", motif: "hearts" },
   { id: "forever", eyebrow: "One last thing", title: "Can I keep loving you forever?", sub: "Choose wisely. One button is feeling a little shy.", yesLabel: "Forever and always", noLabel: "Not a chance", reaction: "I knew forever sounded better with you in it.", motif: "sparkles", isFinal: true },
 ];
@@ -71,13 +71,33 @@ function choose(isYes: boolean): void {
   const question = QUESTIONS[currentIndex];
   if (question.isFinal && !isYes) return;
   answered = true;
-  app.querySelectorAll<HTMLButtonElement>(".answer").forEach((button) => { button.disabled = true; });
+  createHeartRain();
+  app.querySelectorAll<HTMLButtonElement>(".answer").forEach((button) => { button.disabled = true; button.classList.add("selected"); });
   app.querySelector<HTMLElement>("#reaction")!.textContent = question.reaction;
   app.querySelector<HTMLElement>(".live-region")!.textContent = question.reaction;
   reactionTimer = window.setTimeout(() => {
     if (question.isFinal) renderCelebration();
     else { currentIndex += 1; renderQuestion(); }
-  }, 3000);
+  }, 1500);
+}
+
+function createHeartRain(): void {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const rain = document.createElement("div");
+  rain.className = "heart-rain";
+  rain.setAttribute("aria-hidden", "true");
+  for (let index = 0; index < 28; index += 1) {
+    const heart = document.createElement("span");
+    heart.textContent = index % 4 === 0 ? "♡" : "♥";
+    heart.style.setProperty("--heart-left", `${Math.random() * 100}%`);
+    heart.style.setProperty("--heart-delay", `${Math.random() * 0.55}s`);
+    heart.style.setProperty("--heart-duration", `${1.6 + Math.random() * 1.4}s`);
+    heart.style.setProperty("--heart-size", `${12 + Math.random() * 17}px`);
+    heart.style.setProperty("--heart-tilt", `${-35 + Math.random() * 70}deg`);
+    rain.appendChild(heart);
+  }
+  document.body.appendChild(rain);
+  window.setTimeout(() => rain.remove(), 3400);
 }
 
 function setupEvasiveButton(button: HTMLButtonElement): void {
@@ -104,6 +124,7 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
   button.addEventListener("pointerenter", move);
   button.addEventListener("focus", move);
   button.addEventListener("touchstart", move, { passive: false });
+  move();
 }
 
 function renderCelebration(): void {
