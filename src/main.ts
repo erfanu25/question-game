@@ -31,6 +31,18 @@ const CLOSING_MESSAGE = "You make every ordinary day feel extraordinary. I love 
 const RESTART_LABEL = "Play again";
 const HUSBAND_NAME = "Erfan";
 const WIFE_NAME = "Samina";
+const APOLOGY_MESSAGES = [
+  "I am sorry for the times I rushed, reacted badly, or made you feel unseen.",
+  "I should have listened before defending myself, and I know that hurt you.",
+  "You matter to me, and I want to do better with patience, honesty, and gentleness.",
+  "I love you, and I want to choose you with more softness and more care."
+];
+const PROMISES = [
+  { title: "Listen before I answer", text: "I will slow down, hear you out, and understand before I respond." },
+  { title: "Make room for your feelings", text: "Your feelings are valid, and I will not make you shrink them for my comfort." },
+  { title: "Choose patience", text: "When we are tired or stressed, I will choose patience over pride." },
+  { title: "Do better every day", text: "I will work on being kinder, steadier, and more present with you." }
+];
 const app = document.querySelector<HTMLDivElement>("#app")!;
 let currentIndex = 0;
 let answered = false;
@@ -203,8 +215,171 @@ function setupEvasiveButton(button: HTMLButtonElement): void {
 }
 
 function renderCelebration(): void {
-  app.innerHTML = `<main class="celebration"><div class="confetti" aria-hidden="true"></div><div class="celebration-inner"><p class="eyebrow">The easiest answer</p><div class="couple-seal" aria-hidden="true"><span>${HUSBAND_NAME[0]}</span><b>♡</b><span>${WIFE_NAME[0]}</span></div><h1>Forever it is, Samina.</h1><p class="closing-message">${CLOSING_MESSAGE}</p><p class="signature">With all my love,<br><strong>${HUSBAND_NAME}</strong></p><button class="restart" type="button">${RESTART_LABEL}<span aria-hidden="true">↻</span></button><p class="quiet-note">our little forever, ${HUSBAND_NAME} &amp; ${WIFE_NAME}</p></div><div class="live-region" aria-live="polite">You chose forever. ${CLOSING_MESSAGE} Love, ${HUSBAND_NAME}.</div></main>`;
+  app.innerHTML = `<main class="celebration"><div class="confetti" aria-hidden="true"></div><div class="celebration-inner"><p class="eyebrow">The easiest answer</p><div class="couple-seal" aria-hidden="true"><span>${HUSBAND_NAME[0]}</span><b>♡</b><span>${WIFE_NAME[0]}</span></div><h1>Forever it is, Samina.</h1><p class="closing-message">${CLOSING_MESSAGE}</p><p class="signature">With all my love,<br><strong>${HUSBAND_NAME}</strong></p><button class="next-surprise" type="button">One more surprise<span aria-hidden="true">→</span></button><button class="restart" type="button">${RESTART_LABEL}<span aria-hidden="true">↻</span></button><p class="quiet-note">our little forever, ${HUSBAND_NAME} &amp; ${WIFE_NAME}</p></div><div class="live-region" aria-live="polite">You chose forever. ${CLOSING_MESSAGE} Love, ${HUSBAND_NAME}.</div></main>`;
+  app.querySelector<HTMLButtonElement>(".next-surprise")!.addEventListener("click", renderUniverse);
   app.querySelector<HTMLButtonElement>(".restart")!.addEventListener("click", () => { window.clearTimeout(reactionTimer); currentIndex = 0; renderQuestion(); });
+}
+
+function renderUniverse(): void {
+  const stars = Array.from({ length: 26 }, () => {
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const size = 2 + Math.random() * 4;
+    const delay = (Math.random() * 2.5).toFixed(2);
+    const duration = (2 + Math.random() * 3.5).toFixed(2);
+    return `<span style="--x:${x}%; --y:${y}%; --size:${size}px; --delay:${delay}s; --duration:${duration}s"></span>`;
+  }).join("");
+
+  app.innerHTML = `
+    <main class="universe-screen">
+      <div class="star-field" aria-hidden="true">${stars}</div>
+      <div class="universe-inner">
+        <p class="eyebrow">For Samina</p>
+        <h1>My little universe.</h1>
+        <p class="universe-intro">I know I have been learning, and I still want to choose you with gentleness, patience, and honesty.</p>
+
+        <div class="apology-stack" id="chapter-apology">
+          ${APOLOGY_MESSAGES.map((message, index) => `
+            <article class="apology-card" data-index="${index}">
+              <span class="card-index">0${index + 1}</span>
+              <p>${message}</p>
+            </article>
+          `).join("")}
+        </div>
+
+        <button class="chapter-btn" type="button" data-next="response">Continue ♡</button>
+
+        <div class="chapter" id="chapter-response">
+          <div class="response-strip">
+            <button class="response-btn" type="button" data-response="talk">I’m ready to talk</button>
+            <button class="response-btn" type="button" data-response="time">I need some time</button>
+            <button class="response-btn" type="button" data-response="hug">Send me a hug</button>
+          </div>
+
+          <div id="response-panel" class="response-panel" aria-live="polite">
+            I’m listening. I choose softness over pressure.
+          </div>
+        </div>
+
+        <button class="chapter-btn" type="button" data-next="promise" style="display:none">Continue ♡</button>
+
+        <div class="chapter" id="chapter-promise">
+          <div class="promise-panel">
+            <p class="panel-label">My promises</p>
+            <div class="promise-grid">
+              ${PROMISES.map((promise, index) => `
+                <button class="promise-btn" type="button" data-index="${index}">${promise.title}</button>
+              `).join("")}
+            </div>
+            <div id="promise-detail" class="promise-detail">Choose a promise and I’ll hold it close.</div>
+          </div>
+        </div>
+
+        <button class="chapter-btn" type="button" data-next="final" style="display:none">Continue ♡</button>
+
+        <div class="chapter" id="chapter-final">
+          <div class="universe-actions">
+            <button class="download-letter" type="button">Download my letter</button>
+            <button class="restart universe-restart" type="button">${RESTART_LABEL}<span aria-hidden="true">↻</span></button>
+          </div>
+        </div>
+      </div>
+    </main>
+  `;
+
+  const cards = app.querySelectorAll<HTMLElement>(".apology-card");
+  const responseChapter = app.querySelector<HTMLElement>("#chapter-response");
+  const promiseChapter = app.querySelector<HTMLElement>("#chapter-promise");
+  const finalChapter = app.querySelector<HTMLElement>("#chapter-final");
+  const continueButtons = app.querySelectorAll<HTMLButtonElement>(".chapter-btn");
+
+  const revealCards = (): void => {
+    cards.forEach((card, index) => {
+      window.setTimeout(() => {
+        card.classList.add("is-visible");
+      }, index * 500);
+    });
+  };
+
+  const showChapter = (chapter: HTMLElement | null): void => {
+    if (!chapter) return;
+    chapter.classList.add("is-visible");
+  };
+
+  revealCards();
+
+  continueButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = button.dataset.next;
+      if (next === "response") {
+        showChapter(responseChapter);
+        button.style.display = "none";
+        const nextButton = app.querySelector<HTMLButtonElement>('button[data-next="promise"]');
+        if (nextButton) nextButton.style.display = "inline-flex";
+      }
+      if (next === "promise") {
+        showChapter(promiseChapter);
+        button.style.display = "none";
+        const nextButton = app.querySelector<HTMLButtonElement>('button[data-next="final"]');
+        if (nextButton) nextButton.style.display = "inline-flex";
+      }
+      if (next === "final") {
+        showChapter(finalChapter);
+        button.style.display = "none";
+      }
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>(".response-btn").forEach((button) => {
+    const responseKey = button.dataset.response as "talk" | "time" | "hug" | undefined;
+    const message = {
+      talk: "I’m listening. I choose softness over pressure, and I want to understand you better.",
+      time: "I hear you. Your peace matters more than my rush, and I will respect your pace.",
+      hug: "I’m here. A hug is not a fix, but it is a start, and I am ready to meet you gently."
+    }[responseKey ?? "talk"];
+
+    button.addEventListener("click", () => {
+      app.querySelector<HTMLElement>("#response-panel")!.textContent = message;
+      app.querySelectorAll<HTMLButtonElement>(".response-btn").forEach((btn) => btn.classList.toggle("active", btn === button));
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>(".promise-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const promise = PROMISES[Number(button.dataset.index)];
+      app.querySelector<HTMLElement>("#promise-detail")!.textContent = promise.text;
+      app.querySelectorAll<HTMLButtonElement>(".promise-btn").forEach((btn) => btn.classList.toggle("active", btn === button));
+    });
+  });
+
+  app.querySelector<HTMLButtonElement>(".download-letter")?.addEventListener("click", () => {
+    const letter = [
+      "For Samina, from Erfan",
+      "",
+      "I am sorry for the times I made you feel unseen, rushed, or unheard.",
+      "I know I still have a lot to learn, and I want to choose you with more patience, honesty, and care.",
+      "I will listen before I answer.",
+      "I will make room for your feelings.",
+      "I will choose patience over pride.",
+      "I will keep learning and doing better every day.",
+      "I love you, and I want to be gentler with your heart and steadier with my love.",
+      "No pressure. No performance. Just me, choosing you with more intention."
+    ].join("\n");
+
+    const blob = new Blob([letter], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "for-samina-from-erfan.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+
+  app.querySelector<HTMLButtonElement>(".universe-restart")?.addEventListener("click", () => {
+    window.clearTimeout(reactionTimer);
+    currentIndex = 0;
+    renderQuestion();
+  });
 }
 
 renderQuestion();
